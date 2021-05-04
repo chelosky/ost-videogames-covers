@@ -4,12 +4,16 @@ pandas
 '''
 import pandas as pd
 import requests 
+from dotenv import dotenv_values
 
 ''' VARIABLES GLOBALES '''
 
-url_api = "http://localhost:3500/api/"
-file_path = "db-base-info.xlsx"
+config = dotenv_values(".env")
+url_api = config['URL']
+file_path = config['FILE_PATH']
+access_token = config['ADMIN_TOKEN']
 sheets_name = ['Videogame','Ost']
+headers_token ={'Content-Type':'application/x-www-form-urlencoded','Authorization': 'Bearer {}'.format(access_token)}
 
 ''' CARGAR INFORMACIÓN DEL EXCEL '''
 print('Precargando Excel')
@@ -25,9 +29,12 @@ for index, row in df_VIDEOGAMES.iterrows():
     # data to be sent to api 
     body = {'title':row['title']} 
     # VERIFICAR SI EXISTE EL VIDEOJUEGO
-    r = requests.post(url = url_api + 'videogames/name', data=body)
-    data = r.json() 
-    if(data['videogame'] == None):
+    r = requests.get(
+            url = url_api + 'videogame/', 
+            params=body,
+            headers=headers_token)
+    data = r.json()
+    if(data['count'] == 0):
         # LO REGISTRAMOS EN EL SISTEMA, Y OBTENEMOS SU ID ASOCIADO
         body = {
                     'title':row['title'],
@@ -35,18 +42,18 @@ for index, row in df_VIDEOGAMES.iterrows():
                     'description':row['description'],
                     'image':row['image']
                 }  
-        rCreate = requests.post(url = url_api + 'videogames/', data=body)
+        rCreate = requests.post(url = url_api + 'videogame/', data=body, headers=headers_token)
         dataCreate = rCreate.json()
         vgDictionary[row['title']] = dataCreate['videogame']['_id']
     else:
         # YA EXISTE, ENTONCES OBTENEMOS SU ID ASOCIADO
-        vgDictionary[row['title']] = data['videogame']['_id']
+        vgDictionary[row['title']] = data['videogames'][0]['_id']
     print('Registrado: '+ row['title'])
 
-''' SOUNDTRACKS '''
+# ''' SOUNDTRACKS '''
 print('Limpiando Soundtracks')
 # ELIMINAR TODOS LOS SOUNDTRACKS
-rClean = requests.delete(url = url_api + 'soundtracks/clean/db')
+rClean = requests.delete(url = url_api + 'soundtrack/clean/db',headers=headers_token)
 dataClean = rClean.json()
 print('Registrando Soundtracks')
 print('TOTAL OST',len(df_SOUNDTRACKS))
@@ -59,7 +66,7 @@ for index, row in df_SOUNDTRACKS.iterrows():
                 'information':row['information'],
                 'url':row['url']
             }  
-    rCreateOST = requests.post(url = url_api + 'soundtracks/', data=body)
+    rCreateOST = requests.post(url = url_api + 'soundtrack/', data=body,headers=headers_token)
     dataCreateOST = rCreateOST.json()
     print('Progreso: ' +str(format(float((index+1))/float(len(df_SOUNDTRACKS)) * 100, '.2f')) + '%')
 # PROCESO COMPLETADO
