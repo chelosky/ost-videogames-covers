@@ -20,6 +20,14 @@ print('Precargando Excel')
 df_VIDEOGAMES = pd.read_excel(file_path, sheets_name[0])
 df_SOUNDTRACKS = pd.read_excel(file_path, sheets_name[1])
 
+print('Limpiando Soundtracks')
+# ELIMINAR TODOS LOS SOUNDTRACKS
+rClean = requests.delete(url = url_api + 'soundtrack/clean/db',headers=headers_token)
+dataClean = rClean.json()
+print('Limpiando VGs')
+# ELIMINAR TODOS LOS SOUNDTRACKS
+rClean = requests.delete(url = url_api + 'videogame/clean/db',headers=headers_token)
+dataClean = rClean.json()
 ''' VIDEOGAMES '''
 print('Registrando VGs')
 # Diccionario para encontrar los id en base a su nombre asociado
@@ -40,6 +48,7 @@ for index, row in df_VIDEOGAMES.iterrows():
                     'title':row['title'],
                     'saga':row['saga'],
                     'description':row['description'],
+                    'correlative':row['correlative'],
                     'image':row['image']
                 }  
         rCreate = requests.post(url = url_api + 'videogame/', data=body, headers=headers_token)
@@ -51,10 +60,6 @@ for index, row in df_VIDEOGAMES.iterrows():
     print('Registrado: '+ row['title'])
 
 # ''' SOUNDTRACKS '''
-print('Limpiando Soundtracks')
-# ELIMINAR TODOS LOS SOUNDTRACKS
-rClean = requests.delete(url = url_api + 'soundtrack/clean/db',headers=headers_token)
-dataClean = rClean.json()
 print('Registrando Soundtracks')
 print('TOTAL OST',len(df_SOUNDTRACKS))
 # INGRESAR LOS SOUNDSTRACK DEL DATAFRAME
